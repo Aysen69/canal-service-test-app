@@ -8,16 +8,16 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as React from 'react';
-import { ColorSchemeName, Pressable } from 'react-native';
+import { ColorSchemeName, Image, Pressable } from 'react-native';
 
 import Colors from '../constants/Colors';
 import useColorScheme from '../hooks/useColorScheme';
-import ModalScreen from '../screens/ModalScreen';
 import NotFoundScreen from '../screens/NotFoundScreen';
-import TabOneScreen from '../screens/TabOneScreen';
-import TabTwoScreen from '../screens/TabTwoScreen';
+import AuthorizationScreen from '../screens/AuthorizationScreen';
+import PostsScreen from '../screens/PostsScreen';
 import { RootStackParamList, RootTabParamList, RootTabScreenProps } from '../types';
 import LinkingConfiguration from './LinkingConfiguration';
+import * as Device from 'expo-device'
 
 export default function Navigation({ colorScheme }: { colorScheme: ColorSchemeName }) {
   return (
@@ -40,9 +40,6 @@ function RootNavigator() {
     <Stack.Navigator>
       <Stack.Screen name="Root" component={BottomTabNavigator} options={{ headerShown: false }} />
       <Stack.Screen name="NotFound" component={NotFoundScreen} options={{ title: 'Oops!' }} />
-      <Stack.Group screenOptions={{ presentation: 'modal' }}>
-        <Stack.Screen name="Modal" component={ModalScreen} />
-      </Stack.Group>
     </Stack.Navigator>
   );
 }
@@ -53,44 +50,81 @@ function RootNavigator() {
  */
 const BottomTab = createBottomTabNavigator<RootTabParamList>();
 
+function Logo() {
+  const [isMobile, setIsMobile] = React.useState<boolean>(true)
+  const scale = 1.5
+  const [width, setWidth] = React.useState<number>()
+  const height = 63 / scale
+
+  React.useEffect(() => {
+    Device.getDeviceTypeAsync().then((deviceType) => {
+      setIsMobile([Device.DeviceType.PHONE, Device.DeviceType.UNKNOWN].includes(deviceType))
+    })
+  }, [])
+
+  React.useEffect(() => {
+    setWidth(isMobile ? 70 / scale : 273 / scale)
+  }, [isMobile])
+
+  return <Image style={{ width: width, height: height, marginLeft: 20 }} source={require('../assets/images/canal-service-logo-' + (isMobile ? 'phone' : 'tablet') + '.png')}/>
+}
+
+function LogoutButton(props: { onPress: () => void }) {
+  const scale = 1.5
+  return <Pressable
+    onPress={props.onPress}
+    style={({ pressed }) => ({
+      opacity: pressed ? 0.5 : 1,
+    })}>
+    <Image style={{ width: 62.08 / scale, height: 55.82 / scale, marginRight: 20 }} source={require('../assets/images/logout-icon.png')}/>
+  </Pressable>
+}
+
 function BottomTabNavigator() {
   const colorScheme = useColorScheme();
 
   return (
     <BottomTab.Navigator
-      initialRouteName="TabOne"
+      initialRouteName="Authorization"
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme].tint,
       }}>
       <BottomTab.Screen
-        name="TabOne"
-        component={TabOneScreen}
-        options={({ navigation }: RootTabScreenProps<'TabOne'>) => ({
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-          headerRight: () => (
-            <Pressable
-              onPress={() => navigation.navigate('Modal')}
-              style={({ pressed }) => ({
-                opacity: pressed ? 0.5 : 1,
-              })}>
-              <FontAwesome
-                name="info-circle"
-                size={25}
-                color={Colors[colorScheme].text}
-                style={{ marginRight: 15 }}
-              />
-            </Pressable>
-          ),
+        name="Authorization"
+        component={AuthorizationScreen}
+        options={({ navigation }: RootTabScreenProps<'Authorization'>) => ({
+          title: 'Authorization',
+          // tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          tabBarStyle: {
+            display: 'none'
+          },
+          headerTitleStyle: {
+            display: 'none'
+          },
+          headerStyle: {
+            backgroundColor: '#E4B062',
+          },
+          headerLeft: () => <Logo/>,
         })}
       />
       <BottomTab.Screen
-        name="TabTwo"
-        component={TabTwoScreen}
-        options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-        }}
+        name="Posts"
+        component={PostsScreen}
+        options={({ navigation }: RootTabScreenProps<'Posts'>) => ({
+          title: 'Posts',
+          // tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          tabBarStyle: {
+            display: 'none'
+          },
+          headerTitleStyle: {
+            display: 'none'
+          },
+          headerStyle: {
+            backgroundColor: '#E4B062',
+          },
+          headerLeft: () => <Logo/>,
+          headerRight: () => <LogoutButton onPress={() => navigation.navigate('Authorization')}/>,
+        })}
       />
     </BottomTab.Navigator>
   );
